@@ -1,0 +1,333 @@
+/* Component-specific styles */
+
+/* Data Display Components */
+.data-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.data-item:last-child {
+    border-bottom: none;
+}
+
+.data-label {
+    font-weight: 500;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.data-value {
+    font-weight: 600;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.data-value.highlight {
+    color: var(--primary-color);
+    font-size: 1rem;
+}
+
+/* XP Display */
+.xp-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.xp-stat {
+    text-align: center;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.xp-stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    display: block;
+}
+
+.xp-stat-label {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-top: 0.25rem;
+}
+
+/* Progress Bars */
+.progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: var(--bg-tertiary);
+    border-radius: 4px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary-color), var(--success-color));
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+/* Skills Grid */
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+}
+
+.skill-item {
+    background: var(--bg-tertiary);
+    padding: 0.75rem;
+    border-radius: var(--border-radius);
+    text-align: center;
+    border: 1px solid var(--border-color);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.skill-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-md);
+}
+
+.skill-name {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    margin-bottom: 0.25rem;
+}
+
+.skill-level {
+    font-size: 0.625rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+/* Grades Display */
+.grades-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.grade-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.grade-project {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.grade-score {
+    font-weight: 600;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+}
+
+.grade-score.pass {
+    background-color: #dcfce7;
+    color: var(--success-color);
+}
+
+.grade-score.fail {
+    background-color: #fef2f2;
+    color: var(--error-color);
+}
+
+/* SVG Graph Styles */
+.graph-svg {
+    width: 100%;
+    height: 100%;
+    background: var(--bg-primary);
+    border-radius: var(--border-radius);
+}
+
+.graph-axis {
+    stroke: var(--border-color);
+    stroke-width: 1;
+}
+
+.graph-axis-text {
+    fill: var(--text-secondary);
+    font-size: 12px;
+    font-family: var(--font-family);
+}
+
+.graph-line {
+    fill: none;
+    stroke: var(--primary-color);
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.graph-area {
+    fill: var(--primary-color);
+    fill-opacity: 0.1;
+}
+
+.graph-point {
+    fill: var(--primary-color);
+    stroke: var(--bg-primary);
+    stroke-width: 2;
+    cursor: pointer;
+    transition: r 0.2s;
+}
+
+.graph-point:hover {
+    r: 6;
+}
+
+.graph-bar {
+    fill: var(--primary-color);
+    transition: fill 0.2s;
+}
+
+.graph-bar:hover {
+    fill: var(--primary-hover);
+}
+
+.graph-pie-slice {
+    stroke: var(--bg-primary);
+    stroke-width: 2;
+    cursor: pointer;
+    transition: transform 0.2s;
+}
+
+.graph-pie-slice:hover {
+    transform: scale(1.05);
+    transform-origin: center;
+}
+
+.graph-legend {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+}
+
+/* Tooltip */
+.graph-tooltip {
+    position: absolute;
+    background: var(--text-primary);
+    color: white;
+    padding: 0.5rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    pointer-events: none;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.2s;
+}
+
+.graph-tooltip.visible {
+    opacity: 1;
+}
+
+/* Animation Classes */
+.fade-in {
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.slide-in {
+    animation: slideIn 0.3s ease-out;
+}
+
+@keyframes slideIn {
+    from { transform: translateX(-20px); opacity: 0; }
+    to { transform: translateX(0); opacity: 1; }
+}
+
+/* Status Indicators */
+.status-indicator {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+}
+
+.status-indicator.success {
+    background-color: #dcfce7;
+    color: var(--success-color);
+}
+
+.status-indicator.error {
+    background-color: #fef2f2;
+    color: var(--error-color);
+}
+
+.status-indicator.warning {
+    background-color: #fef3c7;
+    color: var(--warning-color);
+}
+
+.status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: currentColor;
+}
+
+/* Responsive adjustments for components */
+@media (max-width: 768px) {
+    .xp-summary {
+        grid-template-columns: repeat(2, 1fr);
+    }
+    
+    .skills-grid {
+        grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    }
+    
+    .graph-legend {
+        gap: 0.5rem;
+    }
+    
+    .data-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+}
