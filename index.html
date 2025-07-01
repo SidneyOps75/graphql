@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zone01 Kisumu - Profile</title>
+    <link rel="stylesheet" href="assets/styles/main.css">
+    <link rel="stylesheet" href="assets/styles/components.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Login Section -->
+        <div id="login-section" class="section active">
+            <div class="login-container">
+                <div class="login-header">
+                    <h1>Zone01 Kisumu</h1>
+                    <p>Access your learning profile</p>
+                </div>
+                
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <label for="identifier">Username or Email</label>
+                        <input type="text" id="identifier" name="identifier" required 
+                               placeholder="Enter your username or email">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">Password</label>
+                        <input type="password" id="password" name="password" required 
+                               placeholder="Enter your password">
+                    </div>
+                    
+                    <button type="submit" id="login-btn" class="btn btn-primary">
+                        <span class="btn-text">Login</span>
+                        <span class="btn-loading hidden">Logging in...</span>
+                    </button>
+                    
+                    <div id="login-error" class="error-message hidden"></div>
+                </form>
+            </div>
+        </div>
+
+        <!-- Profile Section -->
+        <div id="profile-section" class="section hidden">
+            <header class="profile-header">
+                <div class="user-info">
+                    <h1 id="user-name">Loading...</h1>
+                    <p id="user-login"></p>
+                </div>
+                <button id="logout-btn" class="btn btn-secondary">Logout</button>
+            </header>
+
+            <main class="profile-content">
+                <!-- User Information Card -->
+                <section class="profile-card" id="user-info-card">
+                    <h2>User Information</h2>
+                    <div id="user-details" class="card-content">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </section>
+
+                <!-- XP Information Card -->
+                <section class="profile-card" id="xp-info-card">
+                    <h2>Experience Points</h2>
+                    <div id="xp-details" class="card-content">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </section>
+
+                <!-- Grades & Skills Card -->
+                <section class="profile-card" id="grades-skills-card">
+                    <h2>Grades & Skills</h2>
+                    <div id="grades-skills-details" class="card-content">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </section>
+
+                <!-- Statistics Section -->
+                <section class="statistics-section">
+                    <h2>Statistics</h2>
+                    <div class="graphs-container">
+                        <div class="graph-card">
+                            <h3>XP Progress Over Time</h3>
+                            <div id="xp-progress-graph" class="graph-container">
+                                <!-- SVG graph will be inserted here -->
+                            </div>
+                        </div>
+                        
+                        <div class="graph-card">
+                            <h3>Project Success Rate</h3>
+                            <div id="success-rate-graph" class="graph-container">
+                                <!-- SVG graph will be inserted here -->
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </main>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loading-overlay" class="loading-overlay hidden">
+            <div class="loading-spinner"></div>
+            <p>Loading your profile...</p>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="utils/helpers.js"></script>
+    <script src="services/auth.js"></script>
+    <script src="services/graphql.js"></script>
+    <script src="components/profile.js"></script>
+    <script src="components/graphs.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
