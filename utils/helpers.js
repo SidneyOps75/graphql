@@ -159,23 +159,39 @@ function showSuccess(message, container = null) {
 }
 
 /**
- * Filter XP data to exclude piscine projects
+ * Filter XP data to keep only projects and piscines (exclude all exercises, raids, piscine-go, piscine-rust)
  * @param {Array} xpData - XP transaction data
  * @returns {Array} Filtered XP data
  */
 function filterXPData(xpData) {
     return xpData.filter(transaction => {
-        const path = transaction.path || '';
+        const objectType = transaction.object?.type || '';
         const objectName = transaction.object?.name || '';
-        
-        // Filter out piscine projects (Go, JavaScript, Rust)
-        const isPiscine = path.includes('piscine') || 
-                         objectName.toLowerCase().includes('piscine') ||
-                         path.includes('piscine-go') ||
-                         path.includes('piscine-js') ||
-                         path.includes('piscine-rust');
-        
-        return !isPiscine;
+        const path = transaction.path || '';
+
+        // Filter out all exercises
+        if (objectType === 'exercise') {
+            return false;
+        }
+
+        // Filter out all raids
+        if (objectType === 'raid') {
+            return false;
+        }
+
+        // Filter out piscine-go
+        const isPiscineGo = objectType === 'piscine' &&
+                           (objectName.toLowerCase().includes('go') ||
+                            path.includes('piscine-go') ||
+                            objectName.toLowerCase() === 'piscine go');
+
+        // Filter out piscine-rust
+        const isPiscineRust = objectType === 'piscine' &&
+                             (objectName.toLowerCase().includes('rust') ||
+                              path.includes('piscine-rust') ||
+                              objectName.toLowerCase() === 'piscine rust');
+
+        return !(isPiscineGo || isPiscineRust);
     });
 }
 
