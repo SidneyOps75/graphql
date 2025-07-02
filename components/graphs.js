@@ -13,7 +13,9 @@ class GraphsComponent {
             warning: '#f59e0b',
             background: '#ffffff',
             grid: '#e2e8f0',
-            text: '#64748b'
+            text: '#64748b',
+            auditGiven: '#3b82f6',      // blue for audits given
+            auditReceived: '#f97316'    // orange for audits received
         };
     }
 
@@ -26,7 +28,7 @@ class GraphsComponent {
         
         try {
             this.renderXPProgressGraph(profileData.xp || []);
-            this.renderSuccessRateGraph(profileData.progress || []);
+            this.renderAuditRatioGraph(profileData.audits || {});
         } catch (error) {
             console.error('Error rendering graphs:', error);
         }
@@ -142,17 +144,15 @@ class GraphsComponent {
     }
 
     /**
-     * Render project success rate graph (pie chart)
-     * @param {Array} progressData - Progress data
+     * Render audit ratio graph (pie chart)
+     * @param {Object} auditData - Audit data
      */
-    renderSuccessRateGraph(progressData) {
+    renderAuditRatioGraph(auditData) {
         const container = document.getElementById('success-rate-graph');
         if (!container) return;
 
-        const successStats = helpers.calculateSuccessRate(progressData);
-
-        if (successStats.total === 0) {
-            container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No project data available</p>';
+        if (!auditData || (auditData.auditsGiven === 0 && auditData.auditsReceived === 0)) {
+            container.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">No audit data available</p>';
             return;
         }
 
@@ -177,47 +177,50 @@ class GraphsComponent {
         background.setAttribute('fill', this.colors.background);
         svg.appendChild(background);
 
-        // Calculate angles
-        const passedAngle = (successStats.passed / successStats.total) * 2 * Math.PI;
-        const failedAngle = (successStats.failed / successStats.total) * 2 * Math.PI;
+        // Calculate angles for audit data
+        const totalAudits = auditData.auditsGiven + auditData.auditsReceived;
+        const givenAngle = (auditData.auditsGiven / totalAudits) * 2 * Math.PI;
+        const receivedAngle = (auditData.auditsReceived / totalAudits) * 2 * Math.PI;
 
         // Create pie slices
-        if (successStats.passed > 0) {
-            const passedPath = this.createPieSlice(centerX, centerY, radius, 0, passedAngle);
-            const passedSlice = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            passedSlice.setAttribute('d', passedPath);
-            passedSlice.setAttribute('fill', this.colors.success);
-            passedSlice.setAttribute('stroke', this.colors.background);
-            passedSlice.setAttribute('stroke-width', '2');
-            passedSlice.setAttribute('class', 'graph-pie-slice');
-            
-            passedSlice.addEventListener('mouseenter', (e) => {
-                this.showTooltip(e, `Passed: ${successStats.passed} projects<br>${successStats.successRate.toFixed(1)}%`);
+        if (auditData.auditsGiven > 0) {
+            const givenPath = this.createPieSlice(centerX, centerY, radius, 0, givenAngle);
+            const givenSlice = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            givenSlice.setAttribute('d', givenPath);
+            givenSlice.setAttribute('fill', this.colors.auditGiven);
+            givenSlice.setAttribute('stroke', this.colors.background);
+            givenSlice.setAttribute('stroke-width', '2');
+            givenSlice.setAttribute('class', 'graph-pie-slice');
+
+            givenSlice.addEventListener('mouseenter', (e) => {
+                const givenFormatted = window.graphqlService ? window.graphqlService.formatXPAmount(auditData.auditsGiven) : auditData.auditsGiven;
+                this.showTooltip(e, `Audits Given: ${givenFormatted}<br>${((auditData.auditsGiven/totalAudits)*100).toFixed(1)}%`);
             });
-            passedSlice.addEventListener('mouseleave', () => {
+            givenSlice.addEventListener('mouseleave', () => {
                 this.hideTooltip();
             });
 
-            svg.appendChild(passedSlice);
+            svg.appendChild(givenSlice);
         }
 
-        if (successStats.failed > 0) {
-            const failedPath = this.createPieSlice(centerX, centerY, radius, passedAngle, passedAngle + failedAngle);
-            const failedSlice = document.createElementNS('http://www.w3.org/2000/svg', 'path');
-            failedSlice.setAttribute('d', failedPath);
-            failedSlice.setAttribute('fill', this.colors.error);
-            failedSlice.setAttribute('stroke', this.colors.background);
-            failedSlice.setAttribute('stroke-width', '2');
-            failedSlice.setAttribute('class', 'graph-pie-slice');
-            
-            failedSlice.addEventListener('mouseenter', (e) => {
-                this.showTooltip(e, `Failed: ${successStats.failed} projects<br>${(100 - successStats.successRate).toFixed(1)}%`);
+        if (auditData.auditsReceived > 0) {
+            const receivedPath = this.createPieSlice(centerX, centerY, radius, givenAngle, givenAngle + receivedAngle);
+            const receivedSlice = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            receivedSlice.setAttribute('d', receivedPath);
+            receivedSlice.setAttribute('fill', this.colors.auditReceived);
+            receivedSlice.setAttribute('stroke', this.colors.background);
+            receivedSlice.setAttribute('stroke-width', '2');
+            receivedSlice.setAttribute('class', 'graph-pie-slice');
+
+            receivedSlice.addEventListener('mouseenter', (e) => {
+                const receivedFormatted = window.graphqlService ? window.graphqlService.formatXPAmount(auditData.auditsReceived) : auditData.auditsReceived;
+                this.showTooltip(e, `Audits Received: ${receivedFormatted}<br>${((auditData.auditsReceived/totalAudits)*100).toFixed(1)}%`);
             });
-            failedSlice.addEventListener('mouseleave', () => {
+            receivedSlice.addEventListener('mouseleave', () => {
                 this.hideTooltip();
             });
 
-            svg.appendChild(failedSlice);
+            svg.appendChild(receivedSlice);
         }
 
         // Add center text
@@ -227,8 +230,8 @@ class GraphsComponent {
         centerText.setAttribute('text-anchor', 'middle');
         centerText.setAttribute('font-size', '24');
         centerText.setAttribute('font-weight', 'bold');
-        centerText.setAttribute('fill', this.colors.primary);
-        centerText.textContent = `${successStats.successRate.toFixed(1)}%`;
+        centerText.setAttribute('fill', '#000000');
+        centerText.textContent = auditData.auditRatio.toFixed(2);
         svg.appendChild(centerText);
 
         const centerSubtext = document.createElementNS('http://www.w3.org/2000/svg', 'text');
@@ -236,15 +239,15 @@ class GraphsComponent {
         centerSubtext.setAttribute('y', centerY + 15);
         centerSubtext.setAttribute('text-anchor', 'middle');
         centerSubtext.setAttribute('font-size', '12');
-        centerSubtext.setAttribute('fill', this.colors.text);
-        centerSubtext.textContent = 'Success Rate';
+        centerSubtext.setAttribute('fill', '#000000');
+        centerSubtext.textContent = 'Audit Ratio';
         svg.appendChild(centerSubtext);
 
         container.innerHTML = '';
         container.appendChild(svg);
 
         // Add legend
-        this.addPieChartLegend(container, successStats);
+        this.addAuditRatioLegend(container, auditData);
     }
 
     /**
@@ -386,23 +389,27 @@ class GraphsComponent {
     }
 
     /**
-     * Add legend for pie chart
+     * Add legend for audit ratio chart
      */
-    addPieChartLegend(container, successStats) {
+    addAuditRatioLegend(container, auditData) {
         const legend = document.createElement('div');
         legend.className = 'graph-legend';
-        
+
+        // Format XP amounts for display
+        const givenFormatted = window.graphqlService ? window.graphqlService.formatXPAmount(auditData.auditsGiven) : auditData.auditsGiven;
+        const receivedFormatted = window.graphqlService ? window.graphqlService.formatXPAmount(auditData.auditsReceived) : auditData.auditsReceived;
+
         legend.innerHTML = `
             <div class="legend-item">
-                <div class="legend-color" style="background-color: ${this.colors.success}"></div>
-                <span>Passed (${successStats.passed})</span>
+                <div class="legend-color" style="background-color: ${this.colors.auditGiven}"></div>
+                <span>Given (${givenFormatted})</span>
             </div>
             <div class="legend-item">
-                <div class="legend-color" style="background-color: ${this.colors.error}"></div>
-                <span>Failed (${successStats.failed})</span>
+                <div class="legend-color" style="background-color: ${this.colors.auditReceived}"></div>
+                <span>Received (${receivedFormatted})</span>
             </div>
         `;
-        
+
         container.appendChild(legend);
     }
 
