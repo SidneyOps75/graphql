@@ -167,11 +167,52 @@ class ProfileComponent {
             return;
         }
 
-        // Filter out piscine XP as per user preference
+        // Filter out piscine-go only (keep other piscines, exercises, projects)
         const filteredXP = helpers.filterXPData(xpData);
-        
-        // Calculate XP statistics
+
+        // DEBUG: Calculate both filtered and unfiltered totals
         const totalXP = filteredXP.reduce((sum, transaction) => sum + transaction.amount, 0);
+        const totalUnfilteredXP = xpData.reduce((sum, transaction) => sum + transaction.amount, 0);
+
+        // DEBUG: Log the difference
+        console.log('=== XP DEBUG INFO ===');
+        console.log('Total XP (filtered):', graphqlService.formatXPAmount(totalXP));
+        console.log('Total XP (unfiltered):', graphqlService.formatXPAmount(totalUnfilteredXP));
+        console.log('Difference:', graphqlService.formatXPAmount(totalUnfilteredXP - totalXP));
+        console.log('Filtered out transactions:', xpData.length - filteredXP.length);
+        console.log('Platform shows: 1.30 MB');
+
+        // DEBUG: Show what's being filtered out
+        const filteredOut = xpData.filter(t => !filteredXP.includes(t));
+        console.log('Filtered out XP sources:');
+        filteredOut.forEach(t => {
+            console.log(`- ${t.object?.name || 'Unknown'} (${t.object?.type || 'Unknown type'}): ${graphqlService.formatXPAmount(t.amount)}`);
+        });
+
+        // DEBUG: Show XP by object type (INCLUDED)
+        const xpByTypeIncluded = {};
+        filteredXP.forEach(t => {
+            const type = t.object?.type || 'Unknown';
+            if (!xpByTypeIncluded[type]) xpByTypeIncluded[type] = { count: 0, total: 0 };
+            xpByTypeIncluded[type].count++;
+            xpByTypeIncluded[type].total += t.amount;
+        });
+        console.log('XP by object type (INCLUDED):');
+        Object.entries(xpByTypeIncluded).forEach(([type, data]) => {
+            console.log(`- ${type}: ${data.count} transactions, ${graphqlService.formatXPAmount(data.total)}`);
+        });
+
+        // DEBUG: Show largest included transactions
+        console.log('Largest included transactions:');
+        const sortedIncluded = [...filteredXP].sort((a, b) => b.amount - a.amount).slice(0, 10);
+        sortedIncluded.forEach(t => {
+            console.log(`- ${t.object?.name || 'Unknown'} (${t.object?.type || 'Unknown'}): ${graphqlService.formatXPAmount(t.amount)}`);
+        });
+
+        console.log(`Current total: ${graphqlService.formatXPAmount(totalXP)}`);
+        console.log(`Platform target: 1.30 MB`);
+        console.log(`Difference: ${graphqlService.formatXPAmount(totalXP - 1300000)} (need to remove this much)`);
+        console.log('===================');
         const projectCount = filteredXP.length;
         const averageXP = projectCount > 0 ? Math.round(totalXP / projectCount) : 0;
         
@@ -182,11 +223,11 @@ class ProfileComponent {
             .filter(t => new Date(t.createdAt) > thirtyDaysAgo)
             .reduce((sum, t) => sum + t.amount, 0);
 
-        // Create XP summary
+        // Create XP summary with KB/MB formatting using GraphQL service formatting
         const xpSummaryHTML = `
             <div class="xp-summary">
                 <div class="xp-stat">
-                    <span class="xp-stat-value">${helpers.formatNumber(totalXP)}</span>
+                    <span class="xp-stat-value">${graphqlService.formatXPAmount(totalXP)}</span>
                     <span class="xp-stat-label">Total XP</span>
                 </div>
                 <div class="xp-stat">
@@ -194,11 +235,11 @@ class ProfileComponent {
                     <span class="xp-stat-label">Projects</span>
                 </div>
                 <div class="xp-stat">
-                    <span class="xp-stat-value">${helpers.formatNumber(averageXP)}</span>
+                    <span class="xp-stat-value">${graphqlService.formatXPAmount(averageXP)}</span>
                     <span class="xp-stat-label">Avg XP</span>
                 </div>
                 <div class="xp-stat">
-                    <span class="xp-stat-value">${helpers.formatNumber(recentXP)}</span>
+                    <span class="xp-stat-value">${graphqlService.formatXPAmount(recentXP)}</span>
                     <span class="xp-stat-label">Last 30 Days</span>
                 </div>
             </div>
@@ -215,7 +256,7 @@ class ProfileComponent {
                 ${recentProjects.map(project => `
                     <div class="data-item">
                         <span class="data-label">${project.object?.name || 'Unknown Project'}</span>
-                        <span class="data-value highlight">+${helpers.formatNumber(project.amount)} XP</span>
+                        <span class="data-value highlight">+${project.formattedAmount}</span>
                     </div>
                 `).join('')}
             </div>

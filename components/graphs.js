@@ -122,7 +122,7 @@ class GraphsComponent {
             
             // Add tooltip
             circle.addEventListener('mouseenter', (e) => {
-                this.showTooltip(e, `${helpers.formatNumber(d.cumulativeXP)} XP<br>${helpers.formatDateShort(d.date)}`);
+                this.showTooltip(e, `${graphqlService.formatXPAmount(d.cumulativeXP)}<br>${helpers.formatDateShort(d.date)}`);
             });
             circle.addEventListener('mouseleave', () => {
                 this.hideTooltip();
@@ -364,7 +364,7 @@ class GraphsComponent {
             text.setAttribute('text-anchor', 'end');
             text.setAttribute('font-size', '10');
             text.setAttribute('fill', this.colors.text);
-            text.textContent = helpers.formatNumber(Math.round(value));
+            text.textContent = graphqlService.formatXPAmount(Math.round(value));
             svg.appendChild(text);
         }
 

@@ -105,6 +105,89 @@ class GraphQLService {
                 transaction(
                     where: {
                         userId: {_eq: $userId},
+                        type: {_eq: "xp"},
+                        object: {
+                            type: {_nin: ["exercise", "raid"]}
+                        },
+                        _not: {
+                            _or: [
+                                {
+                                    _and: [
+                                        {object: {type: {_eq: "piscine"}}},
+                                        {object: {name: {_ilike: "%go%"}}}
+                                    ]
+                                },
+                                {
+                                    _and: [
+                                        {object: {type: {_eq: "piscine"}}},
+                                        {object: {name: {_ilike: "%rust%"}}}
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                    order_by: {createdAt: asc}
+                ) {
+                    id
+                    amount
+                    createdAt
+                    path
+                    object {
+                        name
+                        type
+                        attrs
+                    }
+                }
+            }
+        `;
+
+        const result = await this.query(query, { userId: numericUserId });
+        const transactions = result?.data?.transaction || [];
+
+        // Enhanced processing with more accurate calculations
+        return transactions.map(transaction => ({
+            ...transaction,
+            formattedAmount: this.formatXPAmount(transaction.amount),
+            // More precise KB calculation (1 KB = 1000 bytes)
+            amountKB: parseFloat((transaction.amount / 1000).toFixed(3)),
+            // More precise MB calculation (1 MB = 1,000,000 bytes)
+            amountMB: parseFloat((transaction.amount / 1000000).toFixed(6)),
+            // Add GB for very large amounts
+            amountGB: parseFloat((transaction.amount / 1000000000).toFixed(9))
+        }));
+    }
+
+    /**
+     * Format XP amount to show KB/MB/GB appropriately
+     * @param {number} amount - XP amount in bytes
+     * @returns {string} Formatted string with appropriate unit
+     */
+    formatXPAmount(amount) {
+        if (amount >= 1000000000) {
+            return `${(amount / 1000000000).toFixed(3)} GB`;
+        } else if (amount >= 1000000) {
+            return `${(amount / 1000000).toFixed(3)} MB`;
+        } else if (amount >= 1000) {
+            return `${(amount / 1000).toFixed(2)} KB`;
+        } else {
+            return `${amount} B`;
+        }
+    }
+
+    /**
+     * Get ALL user XP transactions (no filtering) - for debugging
+     * @param {number} userId - User ID
+     * @returns {Promise<Array>} All XP transactions
+     */
+    async getAllUserXP(userId) {
+        // Ensure userId is a number
+        const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+
+        const query = `
+            query GetAllUserXP($userId: Int!) {
+                transaction(
+                    where: {
+                        userId: {_eq: $userId},
                         type: {_eq: "xp"}
                     }
                     order_by: {createdAt: asc}
@@ -116,13 +199,77 @@ class GraphQLService {
                     object {
                         name
                         type
+                        attrs
                     }
                 }
             }
         `;
 
         const result = await this.query(query, { userId: numericUserId });
-        return result?.data?.transaction || [];
+        const transactions = result?.data?.transaction || [];
+
+        // Enhanced processing with more accurate calculations
+        return transactions.map(transaction => ({
+            ...transaction,
+            formattedAmount: this.formatXPAmount(transaction.amount),
+            // More precise KB calculation (1 KB = 1000 bytes)
+            amountKB: parseFloat((transaction.amount / 1000).toFixed(3)),
+            // More precise MB calculation (1 MB = 1,000,000 bytes)
+            amountMB: parseFloat((transaction.amount / 1000000).toFixed(6)),
+            // Add GB for very large amounts
+            amountGB: parseFloat((transaction.amount / 1000000000).toFixed(9))
+        }));
+    }
+
+    /**
+     * Get user XP transactions from modules only (argument-based query)
+     * @param {number} userId - User ID
+     * @returns {Promise<Array>} Module XP transactions only
+     */
+    async getUserModuleXP(userId) {
+        // Ensure userId is a number
+        const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+
+        const query = `
+            query GetUserModuleXP($userId: Int!) {
+                transaction(
+                    where: {
+                        userId: {_eq: $userId},
+                        type: {_eq: "xp"},
+                        object: {
+                            type: {_eq: "project"},
+                            name: {_nregex: "^(piscine|checkpoint)"}
+                        }
+                    }
+                    order_by: {createdAt: asc}
+                ) {
+                    id
+                    amount
+                    createdAt
+                    path
+                    object {
+                        name
+                        type
+                        attrs
+                    }
+                }
+            }
+        `;
+
+        const result = await this.query(query, { userId: numericUserId });
+        const transactions = result?.data?.transaction || [];
+
+        // Enhanced processing with more accurate calculations
+        return transactions.map(transaction => ({
+            ...transaction,
+            formattedAmount: this.formatXPAmount(transaction.amount),
+            // More precise KB calculation (1 KB = 1000 bytes)
+            amountKB: parseFloat((transaction.amount / 1000).toFixed(3)),
+            // More precise MB calculation (1 MB = 1,000,000 bytes)
+            amountMB: parseFloat((transaction.amount / 1000000).toFixed(6)),
+            // Add GB for very large amounts
+            amountGB: parseFloat((transaction.amount / 1000000000).toFixed(9))
+        }));
     }
 
     /**
