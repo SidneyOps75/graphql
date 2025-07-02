@@ -81,17 +81,15 @@
 /* Skills Grid */
 .skills-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 0.75rem;
-    margin-top: 1rem;
+    margin-top: 0.5rem;
 }
 
 .skill-item {
-    background: var(--bg-tertiary);
+    background: #f8fafc;
+    border-radius: 6px;
     padding: 0.75rem;
-    border-radius: var(--border-radius);
-    text-align: center;
-    border: 1px solid var(--border-color);
+    border: 1px solid #e2e8f0;
     transition: transform 0.2s, box-shadow 0.2s;
 }
 
@@ -100,11 +98,75 @@
     box-shadow: var(--shadow-md);
 }
 
-.skill-name {
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: var(--text-primary);
+.skill-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
     margin-bottom: 0.25rem;
+}
+
+.skill-details {
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.skill-category {
+    font-size: 0.7rem;
+    color: var(--primary-color);
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.skill-projects {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    font-style: italic;
+}
+
+.skill-name {
+    font-weight: 500;
+    color: var(--text-primary);
+    font-size: 0.875rem;
+}
+
+.skill-percentage {
+    font-weight: 600;
+    font-size: 0.875rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+}
+
+.skill-percentage.high {
+    background: #dcfce7;
+    color: #166534;
+}
+
+.skill-percentage.medium {
+    background: #fef3c7;
+    color: #92400e;
+}
+
+.skill-percentage.low {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+.skill-bar {
+    width: 100%;
+    height: 6px;
+    background: #e2e8f0;
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.skill-progress {
+    height: 100%;
+    background: linear-gradient(90deg, #3b82f6, #10b981);
+    border-radius: 3px;
+    transition: width 0.3s ease;
 }
 
 .skill-level {
@@ -112,6 +174,112 @@
     color: var(--text-secondary);
     text-transform: uppercase;
     letter-spacing: 0.05em;
+}
+
+/* Skills Summary */
+.skills-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: var(--bg-tertiary);
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+}
+
+.skills-list {
+    margin-top: 1rem;
+}
+
+/* Scrollable Skills Container */
+.skills-container {
+    margin-top: 1rem;
+}
+
+.skills-scrollable {
+    max-height: 400px;
+    min-height: 200px;
+    overflow-y: auto;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    background: var(--bg-primary);
+    padding: 0.5rem;
+}
+
+/* Custom scrollbar styling */
+.skills-scrollable::-webkit-scrollbar {
+    width: 8px;
+}
+
+.skills-scrollable::-webkit-scrollbar-track {
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+}
+
+.skills-scrollable::-webkit-scrollbar-thumb {
+    background: var(--primary-color);
+    border-radius: 4px;
+    opacity: 0.7;
+}
+
+.skills-scrollable::-webkit-scrollbar-thumb:hover {
+    background: var(--primary-hover);
+    opacity: 1;
+}
+
+/* Firefox scrollbar styling */
+.skills-scrollable {
+    scrollbar-width: thin;
+    scrollbar-color: var(--primary-color) var(--bg-tertiary);
+}
+
+/* Skills container data items */
+.skills-scrollable .data-item {
+    margin: 0;
+    padding: 0.75rem;
+    border-bottom: 1px solid var(--border-color);
+    transition: background-color 0.2s ease;
+}
+
+.skills-scrollable .data-item:last-child {
+    border-bottom: none;
+}
+
+.skills-scrollable .data-item:hover {
+    background-color: var(--bg-tertiary);
+}
+
+/* Rank Display */
+.rank-display {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background: linear-gradient(135deg, var(--primary-color), var(--primary-hover));
+    border-radius: var(--border-radius);
+    text-align: center;
+    color: white;
+    box-shadow: var(--shadow-md);
+}
+
+.rank-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.rank-level {
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.rank-name {
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.9;
 }
 
 /* Grades Display */
