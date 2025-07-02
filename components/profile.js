@@ -35,8 +35,8 @@ class ProfileComponent {
             console.log('About to render XP info...');
             this.renderXPInfo();
 
-            console.log('About to render grades and skills...');
-            this.renderGradesAndSkills();
+            console.log('About to render skills...');
+            this.renderSkillsSection();
 
             // Load graphs
             console.log('About to render graphs...');
@@ -267,66 +267,62 @@ class ProfileComponent {
     }
 
     /**
-     * Render grades and skills section
+     * Render skills section (replacing grades)
      */
-    renderGradesAndSkills() {
+    renderSkillsSection() {
         const container = document.getElementById('grades-skills-details');
-        const progress = this.profileData.progress;
-        const results = this.profileData.results;
-        const audits = this.profileData.audits;
-        
+        const skills = this.profileData.skills || [];
+        const rank = this.profileData.rank || { level: 1, rank: 'Beginner' };
+
         if (!container) return;
 
-        // Calculate success rate
-        const successStats = helpers.calculateSuccessRate(progress || []);
-        
-        // Get recent grades
-        const recentGrades = (progress || [])
-            .filter(p => p.object?.type === 'project' && !p.path?.includes('piscine'))
-            .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-            .slice(0, 5);
+        console.log('Skills data:', skills);
+        console.log('Rank data:', rank);
 
-        // Audit ratio information
-        const auditInfo = audits || { auditRatio: 0, auditsGiven: 0, auditsReceived: 0 };
+        // Process and sort skills by percentage (grade)
+        const processedSkills = skills
+            .filter(skill => skill.object?.type === 'skill' || skill.object?.type === 'derived_skill' || skill.object?.type === 'module_skill' || skill.object?.type === 'zone01_skill' || skill.object?.type === 'progress_skill' || skill.object?.type === 'technology' || skill.object?.type === 'technology_progress' || skill.object?.type === 'technology_object' || skill.object?.type === 'highest_skill')
+            .map(skill => ({
+                name: skill.object?.name || 'Unknown Skill',
+                percentage: Math.round(skill.grade * 100), // Convert to percentage
+                grade: skill.grade,
+                lastUpdated: new Date(skill.updatedAt).toLocaleDateString(),
+                projectCount: skill.projectCount || 0,
+                relatedProjects: skill.object?.attrs?.relatedProjects || [],
+                category: skill.category || skill.object?.attrs?.category || 'General',
+                projects: skill.projects || []
+            }))
+            .sort((a, b) => b.percentage - a.percentage); // Sort by percentage descending
 
-        const gradesHTML = `
-            <div class="grades-summary">
-                <div class="data-item">
-                    <span class="data-label">Success Rate:</span>
-                    <span class="data-value highlight">${successStats.successRate.toFixed(1)}%</span>
-                </div>
-                <div class="data-item">
-                    <span class="data-label">Projects Passed:</span>
-                    <span class="data-value">${successStats.passed}</span>
-                </div>
-                <div class="data-item">
-                    <span class="data-label">Projects Failed:</span>
-                    <span class="data-value">${successStats.failed}</span>
-                </div>
-                <div class="data-item">
-                    <span class="data-label">Audit Ratio:</span>
-                    <span class="data-value highlight">${auditInfo.auditRatio.toFixed(2)}</span>
-                </div>
-            </div>
-        `;
+        console.log('Processed skills:', processedSkills);
 
-        const recentGradesHTML = recentGrades.length > 0 ? `
-            <div class="recent-grades">
-                <h4 style="margin: 1rem 0 0.5rem 0; color: var(--text-secondary); font-size: 0.875rem;">Recent Grades</h4>
-                <div class="grades-list">
-                    ${recentGrades.map(grade => `
-                        <div class="grade-item">
-                            <span class="grade-project">${grade.object?.name || 'Unknown Project'}</span>
-                            <span class="grade-score ${grade.grade >= 1 ? 'pass' : 'fail'}">
-                                ${grade.grade >= 1 ? 'PASS' : 'FAIL'} (${grade.grade})
-                            </span>
-                        </div>
-                    `).join('')}
+        // Only show rank if it's meaningful (not default Level 1 Beginner)
+        const shouldShowRank = rank.level > 1 || (rank.level === 1 && rank.rank !== 'Beginner') || rank.source === 'existing_progress' || rank.source === 'highest_grade';
+        const skillsSummaryHTML = shouldShowRank ? `
+            <div class="rank-display">
+                <div class="rank-info">
+                    <span class="rank-level">Level ${rank.level}</span>
+                    <span class="rank-name">${rank.rank}</span>
                 </div>
             </div>
         ` : '';
 
-        container.innerHTML = gradesHTML + recentGradesHTML;
+        // Create scrollable skills list to show all skills
+        const skillsListHTML = processedSkills.length > 0 ? `
+            <div class="skills-container">
+                <h4 style="margin: 1rem 0 0.5rem 0; color: var(--text-secondary); font-size: 0.875rem;">Highest Skills (${processedSkills.length} total)</h4>
+                <div class="skills-scrollable">
+                    ${processedSkills.map(skill => `
+                        <div class="data-item">
+                            <span class="data-label">${skill.name}</span>
+                            <span class="data-value highlight">${skill.percentage}%</span>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        ` : '<p style="color: #666;">No skills data available</p>';
+
+        container.innerHTML = skillsSummaryHTML + skillsListHTML;
         container.classList.add('fade-in');
     }
 
