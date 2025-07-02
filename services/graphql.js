@@ -371,16 +371,19 @@ class GraphQLService {
                         type
                     }
                 }
-                transaction_aggregate(
+                down_transactions: transaction(
                     where: {
                         userId: {_eq: $userId},
                         type: {_eq: "down"}
                     }
                 ) {
-                    aggregate {
-                        sum {
-                            amount
-                        }
+                    id
+                    amount
+                    createdAt
+                    path
+                    object {
+                        name
+                        type
                     }
                 }
             }
@@ -388,14 +391,24 @@ class GraphQLService {
 
         const result = await this.query(query, { userId: numericUserId });
         const upTransactions = result?.data?.transaction || [];
-        const downSum = result?.data?.transaction_aggregate?.aggregate?.sum?.amount || 0;
+        const downTransactions = result?.data?.down_transactions || [];
 
-        const upSum = upTransactions.reduce((sum, t) => sum + t.amount, 0);
+        // Calculate XP amounts for audits given and received
+        const auditsGivenXP = upTransactions.reduce((sum, t) => sum + t.amount, 0);
+        const auditsReceivedXP = downTransactions.reduce((sum, t) => sum + Math.abs(t.amount), 0);
+
+        // Calculate ratio based on XP amounts (as platform does)
+        const auditRatio = auditsReceivedXP !== 0 ? auditsGivenXP / auditsReceivedXP : auditsGivenXP > 0 ? auditsGivenXP : 0;
 
         return {
-            auditsGiven: upSum,
-            auditsReceived: Math.abs(downSum),
-            auditRatio: downSum !== 0 ? upSum / Math.abs(downSum) : upSum > 0 ? upSum : 0,
+            auditsGiven: auditsGivenXP,           // Total XP from audits given
+            auditsReceived: auditsReceivedXP,     // Total XP from audits received
+            auditRatio: auditRatio,               // Ratio based on XP amounts
+            auditsGivenCount: upTransactions.length,      // Count of audits given
+            auditsReceivedCount: downTransactions.length, // Count of audits received
+            upTransactions: upTransactions,
+            downTransactions: downTransactions,
+            // Keep legacy fields for backward compatibility
             transactions: upTransactions
         };
     }
