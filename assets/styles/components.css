@@ -195,6 +195,7 @@
 /* Scrollable Skills Container */
 .skills-container {
     margin-top: 1rem;
+    width: 100%; /* Match the width of other profile containers */
 }
 
 .skills-scrollable {
@@ -204,7 +205,8 @@
     border: 1px solid var(--border-color);
     border-radius: var(--border-radius);
     background: var(--bg-primary);
-    padding: 0.5rem;
+    padding: 1rem; /* Increase padding for more internal space */
+    width: 100%; /* Use full container width like other cards */
 }
 
 /* Custom scrollbar styling */
@@ -244,6 +246,137 @@
 
 .skills-scrollable .data-item:last-child {
     border-bottom: none;
+}
+
+/* Enhanced skill items */
+.skill-item-enhanced {
+    padding: 1rem !important;
+}
+
+.skill-main-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.skill-main-info .skill-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+}
+
+.skill-main-info .skill-percentage {
+    font-weight: 700;
+    font-size: 0.9rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #3b82f6, #10b981);
+    color: white;
+}
+
+.skill-details {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    gap: 1rem;
+}
+
+.skill-amount {
+    font-weight: 500;
+    color: var(--primary-color);
+}
+
+.skill-transactions {
+    color: var(--text-secondary);
+}
+
+.skill-category {
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--accent-color);
+}
+
+.skill-item-enhanced:hover {
+    background-color: var(--bg-tertiary);
+}
+
+/* Clean skill items - simplified display */
+.skill-item-clean {
+    padding: 1rem !important; /* Increase padding for more space */
+}
+
+.skill-main-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    gap: 1.5rem; /* Increase gap for better spacing */
+}
+
+.skill-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    gap: 1.5rem; /* Increase gap for better spacing */
+    min-width: 0; /* Allow flex items to shrink */
+}
+
+.skill-name-section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    flex: 2; /* Give more space to skill names */
+    min-width: 0; /* Allow flex item to shrink */
+}
+
+.skill-name-section .skill-name {
+    font-weight: 600;
+    font-size: 0.9rem;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 100%;
+}
+
+.skill-category {
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 500;
+    text-align: right;
+    align-self: flex-start;
+    flex-shrink: 0; /* Prevent category from shrinking */
+    max-width: 200px; /* Increase category width limit */
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1; /* Allow category to take available space */
+}
+
+.skill-main-row .skill-percentage {
+    font-weight: 700;
+    font-size: 1rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 12px;
+    background: linear-gradient(135deg, #3b82f6, #10b981);
+    color: white;
+    min-width: 60px;
+    text-align: center;
+    flex-shrink: 0; /* Prevent percentage badge from shrinking */
+    white-space: nowrap;
+}
+
+.skill-item-clean:hover {
+    background-color: var(--bg-tertiary);
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
 }
 
 .skills-scrollable .data-item:hover {
@@ -484,15 +617,39 @@
     .xp-summary {
         grid-template-columns: repeat(2, 1fr);
     }
-    
+
     .skills-grid {
         grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
     }
-    
+
     .graph-legend {
         gap: 0.5rem;
     }
-    
+
+    /* Clean skill items responsive */
+    .skill-main-row {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+
+    .skill-info {
+        width: 100%;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .skill-category {
+        text-align: left;
+        align-self: flex-start;
+    }
+
+    .skill-main-row .skill-percentage {
+        align-self: flex-end;
+        font-size: 0.9rem;
+        padding: 0.2rem 0.6rem;
+    }
+
     .data-item {
         flex-direction: column;
         align-items: flex-start;

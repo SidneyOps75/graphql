@@ -323,6 +323,15 @@ body {
         gap: 1rem;
         text-align: center;
     }
+
+    .header-buttons {
+        flex-direction: column;
+        width: 100%;
+    }
+
+    .header-buttons .btn {
+        width: 100%;
+    }
     
     .profile-content {
         padding: 1rem;

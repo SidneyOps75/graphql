@@ -1,9 +1,3 @@
-/**
- * GraphQL Service
- * Handles all GraphQL queries to Zone01 Kisumu API
- * Implements normal, nested, and argument-based queries as required
- */
-
 class GraphQLService {
     constructor() {
         this.apiUrl = 'https://learn.zone01kisumu.ke/api/graphql-engine/v1/graphql';
@@ -175,104 +169,6 @@ class GraphQLService {
     }
 
     /**
-     * Get ALL user XP transactions (no filtering) - for debugging
-     * @param {number} userId - User ID
-     * @returns {Promise<Array>} All XP transactions
-     */
-    async getAllUserXP(userId) {
-        // Ensure userId is a number
-        const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : userId;
-
-        const query = `
-            query GetAllUserXP($userId: Int!) {
-                transaction(
-                    where: {
-                        userId: {_eq: $userId},
-                        type: {_eq: "xp"}
-                    }
-                    order_by: {createdAt: asc}
-                ) {
-                    id
-                    amount
-                    createdAt
-                    path
-                    object {
-                        name
-                        type
-                        attrs
-                    }
-                }
-            }
-        `;
-
-        const result = await this.query(query, { userId: numericUserId });
-        const transactions = result?.data?.transaction || [];
-
-        // Enhanced processing with more accurate calculations
-        return transactions.map(transaction => ({
-            ...transaction,
-            formattedAmount: this.formatXPAmount(transaction.amount),
-            // More precise KB calculation (1 KB = 1000 bytes)
-            amountKB: parseFloat((transaction.amount / 1000).toFixed(3)),
-            // More precise MB calculation (1 MB = 1,000,000 bytes)
-            amountMB: parseFloat((transaction.amount / 1000000).toFixed(6)),
-            // Add GB for very large amounts
-            amountGB: parseFloat((transaction.amount / 1000000000).toFixed(9))
-        }));
-    }
-
-    /**
-     * Get user XP transactions from modules only (argument-based query)
-     * @param {number} userId - User ID
-     * @returns {Promise<Array>} Module XP transactions only
-     */
-    async getUserModuleXP(userId) {
-        // Ensure userId is a number
-        const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : userId;
-
-        const query = `
-            query GetUserModuleXP($userId: Int!) {
-                transaction(
-                    where: {
-                        userId: {_eq: $userId},
-                        type: {_eq: "xp"},
-                        object: {
-                            type: {_eq: "project"},
-                            name: {_nregex: "^(piscine|checkpoint)"}
-                        }
-                    }
-                    order_by: {createdAt: asc}
-                ) {
-                    id
-                    amount
-                    createdAt
-                    path
-                    object {
-                        name
-                        type
-                        attrs
-                    }
-                }
-            }
-        `;
-
-        const result = await this.query(query, { userId: numericUserId });
-        const transactions = result?.data?.transaction || [];
-
-        // Enhanced processing with more accurate calculations
-        return transactions.map(transaction => ({
-            ...transaction,
-            formattedAmount: this.formatXPAmount(transaction.amount),
-            // More precise KB calculation (1 KB = 1000 bytes)
-            amountKB: parseFloat((transaction.amount / 1000).toFixed(3)),
-            // More precise MB calculation (1 MB = 1,000,000 bytes)
-            amountMB: parseFloat((transaction.amount / 1000000).toFixed(6)),
-            // Add GB for very large amounts
-            amountGB: parseFloat((transaction.amount / 1000000000).toFixed(9))
-        }));
-    }
-
-    /**
      * Get user progress and grades (nested query)
      * @param {number} userId - User ID
      * @returns {Promise<Array>} Progress data
@@ -413,29 +309,6 @@ class GraphQLService {
         };
     }
 
-    /**
-     * Get specific object information (argument-based query)
-     * @param {number} objectId - Object ID
-     * @returns {Promise<Object>} Object data
-     */
-    async getObject(objectId) {
-        const query = `
-            query GetObject($objectId: bigint!) {
-                object(where: {id: {_eq: $objectId}}) {
-                    id
-                    name
-                    type
-                    attrs
-                    createdAt
-                    updatedAt
-                }
-            }
-        `;
-
-        const result = await this.query(query, { objectId });
-        const objects = result?.data?.object || [];
-        return objects.length > 0 ? objects[0] : null;
-    }
 
     /**
      * Get user highest skills using the working query pattern
@@ -447,7 +320,32 @@ class GraphQLService {
         const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : userId;
 
         try {
-            console.log('=== ZONE01 HIGHEST SKILLS QUERY ===');
+            console.log('=== ZONE01 SKILLS WITH HIGHEST AMOUNTS ===');
+            console.log('Fetching skills with highest amounts for user:', numericUserId);
+
+            // Use the new method that gets highest amounts as percentages
+            return await this.getSkillsWithHighestAmounts(userId);
+
+        } catch (error) {
+            console.error('Error in getUserSkills:', error);
+
+            // Fallback to original method if new method fails
+            console.log('Falling back to original skills query...');
+            return await this.getUserSkillsOriginal(userId);
+        }
+    }
+
+    /**
+     * Original getUserSkills method as fallback
+     * @param {number} userId - User ID
+     * @returns {Promise<Array>} Skills data from Zone01 database
+     */
+    async getUserSkillsOriginal(userId) {
+        // Ensure userId is a number
+        const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+
+        try {
+            console.log('=== ZONE01 HIGHEST SKILLS QUERY (ORIGINAL) ===');
             console.log('Fetching highest skills for user:', numericUserId);
 
             // Use the working query pattern you provided
@@ -615,272 +513,6 @@ class GraphQLService {
             console.log(`- ${skill.object.name}: ${skill.object.attrs.amountFormatted} (${skill.transactionCount} transactions)`);
         });
 
-        return processedSkills;
-    }
-
-    /**
-     * Process technology transaction data
-     * @param {Array} techTransactions - Raw technology transaction data
-     * @returns {Array} Processed technology data
-     */
-    processTechnologyData(techTransactions) {
-        console.log('Processing technology transactions:', techTransactions);
-
-        // Group by technology name/type and sum amounts
-        const techMap = new Map();
-
-        techTransactions.forEach(transaction => {
-            const techName = transaction.object?.name || transaction.type || 'Unknown Technology';
-            const amount = transaction.amount || 0;
-
-            if (techMap.has(techName)) {
-                const existing = techMap.get(techName);
-                existing.totalAmount += amount;
-                existing.transactionCount++;
-                existing.transactions.push(transaction);
-            } else {
-                techMap.set(techName, {
-                    name: techName,
-                    totalAmount: amount,
-                    transactionCount: 1,
-                    transactions: [transaction],
-                    type: transaction.type,
-                    object: transaction.object
-                });
-            }
-        });
-
-        // Convert to array and calculate grades
-        const technologies = Array.from(techMap.values());
-        const maxAmount = Math.max(...technologies.map(t => t.totalAmount));
-
-        const processedTech = technologies.map(tech => ({
-            id: `tech_${tech.name.replace(/[^a-zA-Z0-9]/g, '_')}`,
-            grade: maxAmount > 0 ? tech.totalAmount / maxAmount : 0,
-            createdAt: tech.transactions[0].createdAt,
-            updatedAt: tech.transactions[tech.transactions.length - 1].createdAt,
-            object: {
-                name: tech.name,
-                type: 'technology',
-                attrs: {
-                    totalAmount: tech.totalAmount,
-                    transactionCount: tech.transactionCount,
-                    category: this.getTechnologyCategory(tech.name)
-                }
-            },
-            category: this.getTechnologyCategory(tech.name),
-            totalAmount: tech.totalAmount
-        }));
-
-        processedTech.sort((a, b) => b.totalAmount - a.totalAmount);
-        console.log('Processed technology data:', processedTech);
-        return processedTech;
-    }
-
-    /**
-     * Process technology progress data
-     * @param {Array} techProgress - Raw technology progress data
-     * @returns {Array} Processed technology data
-     */
-    processTechnologyProgress(techProgress) {
-        console.log('Processing technology progress:', techProgress);
-
-        const processedTech = techProgress.map(tech => ({
-            id: `tech_progress_${tech.id}`,
-            grade: tech.grade || 0,
-            createdAt: tech.createdAt,
-            updatedAt: tech.updatedAt,
-            object: {
-                name: tech.object?.name || 'Unknown Technology',
-                type: 'technology_progress',
-                attrs: {
-                    originalType: tech.object?.type,
-                    category: this.getTechnologyCategory(tech.object?.name || '')
-                }
-            },
-            category: this.getTechnologyCategory(tech.object?.name || ''),
-            path: tech.path
-        }));
-
-        processedTech.sort((a, b) => b.grade - a.grade);
-        console.log('Processed technology progress:', processedTech);
-        return processedTech;
-    }
-
-    /**
-     * Process technology objects
-     * @param {Array} techObjects - Raw technology object data
-     * @returns {Array} Processed technology data
-     */
-    processTechnologyObjects(techObjects) {
-        console.log('Processing technology objects:', techObjects);
-
-        const processedTech = techObjects.map((tech, index) => ({
-            id: `tech_object_${tech.id}`,
-            grade: 0.5, // Default grade since we don't have progress info
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            object: {
-                name: tech.name || `Technology ${index + 1}`,
-                type: 'technology_object',
-                attrs: {
-                    originalType: tech.type,
-                    originalAttrs: tech.attrs,
-                    category: this.getTechnologyCategory(tech.name || '')
-                }
-            },
-            category: this.getTechnologyCategory(tech.name || ''),
-            originalType: tech.type
-        }));
-
-        console.log('Processed technology objects:', processedTech);
-        return processedTech;
-    }
-
-    /**
-     * Get technology category
-     * @param {string} techName - Technology name
-     * @returns {string} Technology category
-     */
-    getTechnologyCategory(techName) {
-        const name = techName.toLowerCase();
-
-        if (name.includes('go') || name.includes('golang')) {
-            return 'Programming Languages';
-        }
-        if (name.includes('javascript') || name.includes('js')) {
-            return 'Programming Languages';
-        }
-        if (name.includes('html') || name.includes('css')) {
-            return 'Web Technologies';
-        }
-        if (name.includes('sql') || name.includes('database') || name.includes('db')) {
-            return 'Database Technologies';
-        }
-        if (name.includes('docker') || name.includes('container')) {
-            return 'DevOps Tools';
-        }
-        if (name.includes('git') || name.includes('version')) {
-            return 'Development Tools';
-        }
-        if (name.includes('web') || name.includes('http') || name.includes('api')) {
-            return 'Web Technologies';
-        }
-        if (name.includes('linux') || name.includes('unix') || name.includes('system')) {
-            return 'System Technologies';
-        }
-
-        return 'General Technologies';
-    }
-
-    /**
-     * Process progress skills into displayable skills
-     * @param {Array} progressSkills - Raw progress skill data
-     * @returns {Array} Processed skills data
-     */
-    processProgressSkills(progressSkills) {
-        console.log('Processing progress skills:', progressSkills);
-
-        const processedSkills = progressSkills.map((skill, index) => {
-            const skillName = skill.object?.name || `Skill ${index + 1}`;
-
-            return {
-                id: `progress_skill_${skill.id}`,
-                grade: skill.grade || 0,
-                createdAt: skill.createdAt,
-                updatedAt: skill.updatedAt,
-                object: {
-                    name: skillName,
-                    type: 'progress_skill',
-                    attrs: {
-                        originalType: skill.object?.type,
-                        originalAttrs: skill.object?.attrs,
-                        category: this.getSkillCategory(skillName)
-                    }
-                },
-                category: this.getSkillCategory(skillName),
-                path: skill.path
-            };
-        });
-
-        // Sort by grade (highest first)
-        processedSkills.sort((a, b) => b.grade - a.grade);
-
-        console.log('Processed progress skills:', processedSkills);
-        return processedSkills;
-    }
-
-    /**
-     * Process skill transactions into displayable skills
-     * @param {Array} skillTransactions - Raw skill transaction data
-     * @returns {Array} Processed skills data
-     */
-    processSkillTransactions(skillTransactions) {
-        console.log('Processing skill transactions:', skillTransactions);
-
-        // Group skills by type and sum amounts
-        const skillsMap = new Map();
-
-        skillTransactions.forEach(transaction => {
-            const skillType = transaction.type;
-            const skillName = this.formatSkillName(skillType);
-            const amount = transaction.amount || 0;
-
-            if (skillsMap.has(skillName)) {
-                const existing = skillsMap.get(skillName);
-                existing.totalAmount += amount;
-                existing.transactionCount++;
-                existing.transactions.push(transaction);
-                if (new Date(transaction.updatedAt) > new Date(existing.lastUpdated)) {
-                    existing.lastUpdated = transaction.updatedAt;
-                }
-            } else {
-                skillsMap.set(skillName, {
-                    name: skillName,
-                    type: skillType,
-                    totalAmount: amount,
-                    transactionCount: 1,
-                    transactions: [transaction],
-                    firstSeen: transaction.createdAt,
-                    lastUpdated: transaction.updatedAt,
-                    object: transaction.object
-                });
-            }
-        });
-
-        // Convert to skills array and calculate grades
-        const skills = Array.from(skillsMap.values());
-        const maxAmount = Math.max(...skills.map(s => s.totalAmount));
-
-        const processedSkills = skills.map(skill => {
-            // Calculate grade as percentage of max skill amount
-            const grade = maxAmount > 0 ? skill.totalAmount / maxAmount : 0;
-
-            return {
-                id: `skill_${skill.name.replace(/[^a-zA-Z0-9]/g, '_')}`,
-                grade: grade,
-                createdAt: skill.firstSeen,
-                updatedAt: skill.lastUpdated,
-                object: {
-                    name: skill.name,
-                    type: 'zone01_skill',
-                    attrs: {
-                        skillType: skill.type,
-                        totalAmount: skill.totalAmount,
-                        transactionCount: skill.transactionCount,
-                        category: this.getSkillCategory(skill.name)
-                    }
-                },
-                totalAmount: skill.totalAmount,
-                transactionCount: skill.transactionCount,
-                category: this.getSkillCategory(skill.name)
-            };
-        });
-
-        // Sort by total amount (highest first)
-        processedSkills.sort((a, b) => b.totalAmount - a.totalAmount);
-
-        console.log('Processed skills:', processedSkills);
         return processedSkills;
     }
 
@@ -1337,23 +969,339 @@ class GraphQLService {
         }
     }
 
+
     /**
-     * Get rank name based on level (Zone01 style)
-     * @param {number} level - User level
-     * @returns {string} Rank name
+     * Get skills with highest amounts as percentages
+     * @param {number} userId - User ID
+     * @returns {Promise<Array>} Skills with highest amounts as percentages
      */
-    getRankName(level) {
-        if (level >= 60) return 'Senior Architect';
-        if (level >= 50) return 'Lead Developer';
-        if (level >= 40) return 'Senior Developer';
-        if (level >= 30) return 'Assistant Developer';
-        if (level >= 25) return 'Junior Developer';
-        if (level >= 20) return 'Developer';
-        if (level >= 15) return 'Advanced Programmer';
-        if (level >= 10) return 'Programmer';
-        if (level >= 5) return 'Junior Programmer';
-        if (level >= 2) return 'Apprentice';
-        return 'Beginner';
+    async getSkillsWithHighestAmounts(userId) {
+        const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+
+        console.log('=== SKILLS WITH HIGHEST AMOUNTS QUERY ===');
+        console.log('Fetching skills with highest amounts for user:', numericUserId);
+
+        try {
+            // Query for all skill transactions
+            const query = `
+                query GetAllSkillTransactions($userId: Int!) {
+                    transaction(
+                        where: {
+                            userId: {_eq: $userId},
+                            type: {_like: "skill_%"}
+                        }
+                        order_by: {amount: desc}
+                    ) {
+                        id
+                        type
+                        amount
+                        createdAt
+                        path
+                        object {
+                            id
+                            name
+                            type
+                            attrs
+                        }
+                    }
+                }
+            `;
+
+            const result = await this.query(query, { userId: numericUserId });
+            const transactions = result?.data?.transaction || [];
+
+            console.log('Total skill transactions found:', transactions.length);
+
+            // Group by skill type and find highest amount for each
+            const skillsMap = new Map();
+
+            transactions.forEach(transaction => {
+                const skillType = transaction.type;
+                const skillName = this.formatSkillName(skillType);
+                const amount = transaction.amount || 0;
+
+                if (!skillsMap.has(skillName) || skillsMap.get(skillName).highestAmount < amount) {
+                    skillsMap.set(skillName, {
+                        name: skillName,
+                        type: skillType,
+                        highestAmount: amount,
+                        highestTransaction: transaction,
+                        allTransactions: transactions.filter(t => t.type === skillType),
+                        transactionCount: transactions.filter(t => t.type === skillType).length,
+                        firstSeen: transaction.createdAt,
+                        lastSeen: transaction.createdAt,
+                        object: transaction.object
+                    });
+                }
+            });
+
+            // Update last seen dates
+            skillsMap.forEach((skill, skillName) => {
+                const skillTransactions = transactions.filter(t => this.formatSkillName(t.type) === skillName);
+                skill.transactionCount = skillTransactions.length;
+                skill.firstSeen = skillTransactions[skillTransactions.length - 1]?.createdAt || skill.firstSeen;
+                skill.lastSeen = skillTransactions[0]?.createdAt || skill.lastSeen;
+            });
+
+            // Convert to array and find the maximum amount for percentage calculation
+            const skills = Array.from(skillsMap.values());
+            const maxAmount = Math.max(...skills.map(s => s.highestAmount));
+
+            console.log('Skills found:', skills.length);
+            console.log('Maximum amount found:', maxAmount);
+
+            // Process skills with percentages based on highest amounts directly
+            const processedSkills = skills.map(skill => {
+                // Use the highest amount directly as percentage (capped at 100%)
+                // The highest amount represents the skill level out of 100
+                const directPercentage = Math.min(skill.highestAmount, 100);
+
+                return {
+                    id: `skill_${skill.name.replace(/[^a-zA-Z0-9]/g, '_')}`,
+                    grade: directPercentage / 100, // Keep grade as decimal for compatibility
+                    percentage: Math.round(directPercentage), // Highest amount as percentage
+                    highestAmount: skill.highestAmount,
+                    createdAt: skill.firstSeen,
+                    updatedAt: skill.lastSeen,
+                    object: {
+                        name: skill.name,
+                        type: 'highest_amount_skill',
+                        attrs: {
+                            skillType: skill.type,
+                            highestAmount: skill.highestAmount,
+                            transactionCount: skill.transactionCount,
+                            category: this.getSkillCategory(skill.name),
+                            amountFormatted: this.formatXPAmount(skill.highestAmount),
+                            directPercentage: directPercentage
+                        }
+                    },
+                    totalAmount: skill.highestAmount, // Use highest amount as total
+                    transactionCount: skill.transactionCount,
+                    category: this.getSkillCategory(skill.name),
+                    projectCount: skill.transactionCount
+                };
+            });
+
+            // Sort by highest amount (descending)
+            processedSkills.sort((a, b) => b.highestAmount - a.highestAmount);
+
+            console.log('Processed skills with highest amounts:', processedSkills);
+            return processedSkills;
+
+        } catch (error) {
+            console.error('Error fetching skills with highest amounts:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * Get highest checkpoint level for prog skill
+     * @param {number} userId - User ID
+     * @returns {Promise<Object>} Highest prog skill checkpoint data
+     */
+    async getHighestProgCheckpointLevel(userId) {
+        const numericUserId = typeof userId === 'string' ? parseInt(userId, 10) : userId;
+
+        console.log('=== PROG SKILL CHECKPOINT QUERY ===');
+        console.log('Fetching highest prog skill checkpoint for user:', numericUserId);
+
+        try {
+            // Query for prog skill transactions and progress
+            const progSkillQuery = `
+                query GetProgSkillCheckpoints($userId: Int!) {
+                    # Get prog skill transactions
+                    progTransactions: transaction(
+                        where: {
+                            userId: {_eq: $userId},
+                            type: {_like: "%prog%"},
+                            object: {
+                                name: {_ilike: "%checkpoint%"}
+                            }
+                        }
+                        order_by: {amount: desc}
+                    ) {
+                        id
+                        type
+                        amount
+                        createdAt
+                        path
+                        object {
+                            id
+                            name
+                            type
+                            attrs
+                        }
+                    }
+
+                    # Get prog skill progress
+                    progProgress: progress(
+                        where: {
+                            userId: {_eq: $userId},
+                            object: {
+                                name: {_ilike: "%prog%"},
+                                _or: [
+                                    {name: {_ilike: "%checkpoint%"}},
+                                    {type: {_like: "%checkpoint%"}}
+                                ]
+                            }
+                        }
+                        order_by: {grade: desc}
+                    ) {
+                        id
+                        grade
+                        createdAt
+                        updatedAt
+                        path
+                        object {
+                            id
+                            name
+                            type
+                            attrs
+                        }
+                    }
+
+                    # Get all prog-related skills
+                    allProgSkills: transaction(
+                        where: {
+                            userId: {_eq: $userId},
+                            type: {_like: "%prog%"}
+                        }
+                        order_by: {amount: desc}
+                    ) {
+                        id
+                        type
+                        amount
+                        createdAt
+                        path
+                        object {
+                            id
+                            name
+                            type
+                            attrs
+                        }
+                    }
+                }
+            `;
+
+            const result = await this.query(progSkillQuery, { userId: numericUserId });
+
+            console.log('Prog skill query result:', result);
+
+            const progTransactions = result?.data?.progTransactions || [];
+            const progProgress = result?.data?.progProgress || [];
+            const allProgSkills = result?.data?.allProgSkills || [];
+
+            console.log('Prog transactions found:', progTransactions.length);
+            console.log('Prog progress found:', progProgress.length);
+            console.log('All prog skills found:', allProgSkills.length);
+
+            // Analyze the data to find highest checkpoint level
+            let highestCheckpointLevel = 0;
+            let highestCheckpointData = null;
+
+            // Check transactions for checkpoint levels
+            progTransactions.forEach(transaction => {
+                const objectName = transaction.object?.name || '';
+                const checkpointMatch = objectName.match(/checkpoint[^\d]*(\d+)/i);
+                if (checkpointMatch) {
+                    const level = parseInt(checkpointMatch[1], 10);
+                    if (level > highestCheckpointLevel) {
+                        highestCheckpointLevel = level;
+                        highestCheckpointData = {
+                            level: level,
+                            source: 'transaction',
+                            amount: transaction.amount,
+                            objectName: objectName,
+                            path: transaction.path,
+                            createdAt: transaction.createdAt,
+                            type: transaction.type
+                        };
+                    }
+                }
+            });
+
+            // Check progress for checkpoint levels
+            progProgress.forEach(progress => {
+                const objectName = progress.object?.name || '';
+                const checkpointMatch = objectName.match(/checkpoint[^\d]*(\d+)/i);
+                if (checkpointMatch) {
+                    const level = parseInt(checkpointMatch[1], 10);
+                    if (level > highestCheckpointLevel) {
+                        highestCheckpointLevel = level;
+                        highestCheckpointData = {
+                            level: level,
+                            source: 'progress',
+                            grade: progress.grade,
+                            objectName: objectName,
+                            path: progress.path,
+                            createdAt: progress.createdAt,
+                            updatedAt: progress.updatedAt
+                        };
+                    }
+                }
+            });
+
+            // Also check all prog skills for any checkpoint references
+            allProgSkills.forEach(skill => {
+                const objectName = skill.object?.name || '';
+                const skillType = skill.type || '';
+
+                // Look for checkpoint patterns in both name and type
+                const checkpointMatch = objectName.match(/checkpoint[^\d]*(\d+)/i) ||
+                                       skillType.match(/checkpoint[^\d]*(\d+)/i);
+
+                if (checkpointMatch) {
+                    const level = parseInt(checkpointMatch[1], 10);
+                    if (level > highestCheckpointLevel) {
+                        highestCheckpointLevel = level;
+                        highestCheckpointData = {
+                            level: level,
+                            source: 'skill_transaction',
+                            amount: skill.amount,
+                            objectName: objectName,
+                            skillType: skillType,
+                            path: skill.path,
+                            createdAt: skill.createdAt
+                        };
+                    }
+                }
+            });
+
+            console.log('Highest checkpoint level found:', highestCheckpointLevel);
+            console.log('Highest checkpoint data:', highestCheckpointData);
+
+            if (highestCheckpointLevel > 0) {
+                return {
+                    success: true,
+                    highestLevel: highestCheckpointLevel,
+                    data: highestCheckpointData,
+                    summary: {
+                        progTransactionsCount: progTransactions.length,
+                        progProgressCount: progProgress.length,
+                        allProgSkillsCount: allProgSkills.length
+                    }
+                };
+            } else {
+                return {
+                    success: false,
+                    message: 'No prog skill checkpoint levels found',
+                    highestLevel: 0,
+                    summary: {
+                        progTransactionsCount: progTransactions.length,
+                        progProgressCount: progProgress.length,
+                        allProgSkillsCount: allProgSkills.length
+                    }
+                };
+            }
+
+        } catch (error) {
+            console.error('Error fetching prog skill checkpoint data:', error);
+            return {
+                success: false,
+                error: error.message,
+                highestLevel: 0
+            };
+        }
     }
 }
 

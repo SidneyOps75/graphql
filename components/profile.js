@@ -279,19 +279,29 @@ class ProfileComponent {
         console.log('Skills data:', skills);
         console.log('Rank data:', rank);
 
-        // Process and sort skills by percentage (grade)
+        // Process and sort skills by highest amount percentage
         const processedSkills = skills
-            .filter(skill => skill.object?.type === 'skill' || skill.object?.type === 'derived_skill' || skill.object?.type === 'module_skill' || skill.object?.type === 'zone01_skill' || skill.object?.type === 'progress_skill' || skill.object?.type === 'technology' || skill.object?.type === 'technology_progress' || skill.object?.type === 'technology_object' || skill.object?.type === 'highest_skill')
-            .map(skill => ({
-                name: skill.object?.name || 'Unknown Skill',
-                percentage: Math.round(skill.grade * 100), // Convert to percentage
-                grade: skill.grade,
-                lastUpdated: new Date(skill.updatedAt).toLocaleDateString(),
-                projectCount: skill.projectCount || 0,
-                relatedProjects: skill.object?.attrs?.relatedProjects || [],
-                category: skill.category || skill.object?.attrs?.category || 'General',
-                projects: skill.projects || []
-            }))
+            .filter(skill => skill.object?.type === 'skill' || skill.object?.type === 'derived_skill' || skill.object?.type === 'module_skill' || skill.object?.type === 'zone01_skill' || skill.object?.type === 'progress_skill' || skill.object?.type === 'technology' || skill.object?.type === 'technology_progress' || skill.object?.type === 'technology_object' || skill.object?.type === 'highest_skill' || skill.object?.type === 'highest_amount_skill')
+            .map(skill => {
+                // Use the percentage field if available (from new method), otherwise calculate from grade
+                const percentage = skill.percentage !== undefined ? skill.percentage : Math.round(skill.grade * 100);
+                const highestAmount = skill.highestAmount || skill.totalAmount || 0;
+
+                return {
+                    name: skill.object?.name || 'Unknown Skill',
+                    percentage: percentage,
+                    grade: skill.grade,
+                    highestAmount: highestAmount,
+                    lastUpdated: new Date(skill.updatedAt).toLocaleDateString(),
+                    projectCount: skill.projectCount || 0,
+                    transactionCount: skill.transactionCount || 0,
+                    relatedProjects: skill.object?.attrs?.relatedProjects || [],
+                    category: skill.category || skill.object?.attrs?.category || 'General',
+                    projects: skill.projects || [],
+                    skillType: skill.object?.attrs?.skillType || skill.object?.type,
+                    amountFormatted: skill.object?.attrs?.amountFormatted || this.formatAmount(highestAmount)
+                };
+            })
             .sort((a, b) => b.percentage - a.percentage); // Sort by percentage descending
 
         console.log('Processed skills:', processedSkills);
@@ -307,15 +317,22 @@ class ProfileComponent {
             </div>
         ` : '';
 
-        // Create scrollable skills list to show all skills
+        // Create clean skills list showing only name, percentage, and category
         const skillsListHTML = processedSkills.length > 0 ? `
             <div class="skills-container">
-                <h4 style="margin: 1rem 0 0.5rem 0; color: var(--text-secondary); font-size: 0.875rem;">Highest Skills (${processedSkills.length} total)</h4>
+                <h4 style="margin: 1rem 0 0.5rem 0; color: var(--text-secondary); font-size: 0.875rem;">Skills Progress (${processedSkills.length} total)</h4>
                 <div class="skills-scrollable">
                     ${processedSkills.map(skill => `
-                        <div class="data-item">
-                            <span class="data-label">${skill.name}</span>
-                            <span class="data-value highlight">${skill.percentage}%</span>
+                        <div class="data-item skill-item-clean">
+                            <div class="skill-main-row">
+                                <div class="skill-info">
+                                    <div class="skill-name-section">
+                                        <span class="skill-name" title="${skill.name}">${skill.name}</span>
+                                    </div>
+                                    <span class="skill-category" title="${skill.category}">${skill.category}</span>
+                                </div>
+                                <span class="skill-percentage">${skill.percentage}%</span>
+                            </div>
                         </div>
                     `).join('')}
                 </div>
@@ -324,6 +341,21 @@ class ProfileComponent {
 
         container.innerHTML = skillsSummaryHTML + skillsListHTML;
         container.classList.add('fade-in');
+    }
+
+    /**
+     * Format amount for display
+     * @param {number} amount - Amount to format
+     * @returns {string} Formatted amount
+     */
+    formatAmount(amount) {
+        if (amount >= 1000000) {
+            return `${(amount / 1000000).toFixed(1)}M`;
+        } else if (amount >= 1000) {
+            return `${(amount / 1000).toFixed(1)}K`;
+        } else {
+            return amount.toString();
+        }
     }
 
     /**

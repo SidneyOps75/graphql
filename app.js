@@ -276,6 +276,8 @@ class App {
         // Handle browser back/forward navigation if needed
         console.log('Navigation state changed:', event.state);
     }
+
+
 }
 
 // Initialize app when DOM is loaded
